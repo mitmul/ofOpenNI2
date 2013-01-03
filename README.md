@@ -14,16 +14,17 @@ Requirement
 ### OpenCV2.3.1 or newer (32bit Build) ###
 1. Get OpenCV sources http://sourceforge.net/projects/opencvlibrary/files/
 2. $mkdir build
-3. $ccmake ../
-4. Set some params as below:
+3. $cd build
+4. $ccmake ../
+5. Set some params as below:
 	+ CMAKE_INSTALL_PREFIX=/opt/local
 	+ CMAKE_OSX_ARCHITECTURES=i386
 	+ CMAKE_C_FLAGS=-m32
 	+ CMAKE_CXX_FLAGS=-m32
 	+ WITH_FFMPEG=OFF
-5. Press [c] & Press [g] & Press [q]
-6. $make -j8
-7. $sudo make install
+6. Press [c] & Press [g] & Press [q]
+7. $make -j8
+8. $sudo make install
 
 ### boost 1.52 (32bit Build) ###
 1. Get boost from http://www.boost.org/users/download/

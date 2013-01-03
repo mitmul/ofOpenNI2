@@ -13,7 +13,7 @@ HEADERS += \
     testapp.h \
     sensorcontrol.h
 
-# OpenCV
+# OpenCV 32bit
 LIBS += -L/opt/local/lib \
   -lopencv_calib3d \
   -lopencv_ml \
