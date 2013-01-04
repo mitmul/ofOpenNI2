@@ -4,66 +4,44 @@
 #include <ofMain.h>
 #include <ofAppGlutWindow.h>
 #include <opencv.hpp>
+#include <vector>
 #include "testapp.h"
 #include "sensorcontrol.h"
 
-void getSensor();
-cv::Mat getDepth();
-cv::Mat getColor();
 void slotColor(const cv::Mat &color);
 void slotDepth(const cv::Mat &depth);
+void slotPoint(const vector<cv::Point3d> &point);
+void slotSendColor();
+void slotSendDepth();
+void slotSendPoint();
 
 testApp *of_widget;
 SensorControl *sensor;
 
 boost::signals2::signal<void (const cv::Mat&)> sig_color;
 boost::signals2::signal<void (const cv::Mat&)> sig_depth;
+boost::signals2::signal<void (const vector<cv::Point3d>&)> sig_point;
 
 int main(int argc, char *argv[])
 {
-  boost::thread sensor_thread(&getSensor);
+  sensor = new SensorControl();
 
   of_widget = new testApp();
   sig_color.connect(&slotColor);
   sig_depth.connect(&slotDepth);
+  sig_point.connect(&slotPoint);
+  of_widget->sig_color.connect(&slotSendColor);
+  of_widget->sig_depth.connect(&slotSendDepth);
+  of_widget->sig_point.connect(&slotSendPoint);
 
   ofAppGlutWindow window;
-  ofSetupOpenGL(&window, 1024,768, OF_WINDOW);
+  ofSetupOpenGL(&window, 1000, 600, OF_WINDOW);
   ofRunApp(of_widget);
 
   delete of_widget;
+  delete sensor;
 
   return 0;
-}
-
-void getSensor()
-{
-  sensor = new SensorControl();
-
-  while(1)
-  {
-    cv::Mat color = getColor();
-    cv::Mat depth = getDepth();
-
-    sig_color(color);
-    sig_depth(depth);
-  }
-
-  delete sensor;
-}
-
-cv::Mat getDepth()
-{
-  cv::Mat depth(sensor->getDepthHeight(), sensor->getDepthWidth(), CV_16UC1, sensor->getDepth());
-  depth.convertTo(depth, CV_8UC1, 255.0 / 10000.0);
-  return depth;
-}
-
-cv::Mat getColor()
-{
-  cv::Mat color(sensor->getColorHeight(), sensor->getColorWidth(), CV_8UC3, sensor->getColor());
-  cv::cvtColor(color, color, cv::COLOR_BGR2RGB);
-  return color;
 }
 
 void slotColor(const cv::Mat &color)
@@ -74,4 +52,27 @@ void slotColor(const cv::Mat &color)
 void slotDepth(const cv::Mat &depth)
 {
   of_widget->slotDepth(depth);
+}
+
+void slotPoint(const vector<Point3d> &point)
+{
+  of_widget->slotPoint(point);
+}
+
+void slotSendColor()
+{
+  cv::Mat color = sensor->getColorImage();
+  sig_color(color);
+}
+
+void slotSendDepth()
+{
+  cv::Mat depth = sensor->getDepthImage();
+  sig_depth(depth);
+}
+
+void slotSendPoint()
+{
+  vector<cv::Point3d> point = sensor->getPoints();
+  sig_point(point);
 }

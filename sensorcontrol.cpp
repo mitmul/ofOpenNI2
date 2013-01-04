@@ -1,15 +1,21 @@
 #include "sensorcontrol.h"
 
-SensorControl::SensorControl()
-  : initialize_finished(false)
+SensorControl::SensorControl(const string &file_name)
+  : oni_name(file_name)
 {
   openni::Status rc = openni::STATUS_OK;
 
   rc = OpenNI::initialize();
   outputError("After initialization");
 
-  // デバイスの起動
-  const char* deviceURI = ANY_DEVICE;
+  // デバイスの起動（もしくはファイルから読み込み）
+  char* uri;
+  if(!file_name.empty())
+    uri = file_name.c_str();
+  else
+    uri = ANY_DEVICE;
+  const char *deviceURI = uri;
+
   rc = device.open(deviceURI);
   if(rc != openni::STATUS_OK)
   {
@@ -19,22 +25,35 @@ SensorControl::SensorControl()
 
   setupDepth();
   setupColor();
+
   setRegistration(true);
 
-  NiTE::initialize();
-  rc = (openni::Status)user_tracker.create();
-  if(rc != openni::STATUS_OK)
+  if(oni_name.empty())
   {
-    outputError("User tracker create failed");
-    OpenNI::shutdown();
+    NiTE::initialize();
+    rc = (openni::Status)user_tracker.create();
+    if(rc != openni::STATUS_OK)
+    {
+      outputError("User tracker create failed");
+      OpenNI::shutdown();
+    }
   }
-
-  initialize_finished = true;
 }
 
-bool SensorControl::getDeviceInitializeState()
+SensorControl::~SensorControl()
 {
-  return initialize_finished;
+  if(recorder->isValid())
+  {
+    stopRecording();
+    recorder->destroy();
+    delete recorder;
+  }
+
+  device.close();
+  depth.destroy();
+  color.destroy();
+  user_tracker.destroy();
+  OpenNI::shutdown();
 }
 
 Skeletons SensorControl::getSkeletons(const bool convert)
@@ -55,7 +74,7 @@ Skeletons SensorControl::getSkeletons(const bool convert)
     }
     else if(!user.isLost())
     {
-      vector<Point3f> user_skeleton;
+      vector<nite::Point3f> user_skeleton;
 
       const Skeleton& skeleton = user.getSkeleton();
 
@@ -66,14 +85,14 @@ Skeletons SensorControl::getSkeletons(const bool convert)
           const SkeletonJoint& joint = skeleton.getJoint((JointType)j);
           if(joint.getPositionConfidence() >= 0.7f)
           {
-            const Point3f& position = joint.getPosition();
+            const nite::Point3f& position = joint.getPosition();
 
             if(convert)
             {
               float x, y;
               user_tracker.convertJointCoordinatesToDepth(position.x, position.y, position.z, &x, &y);
 
-              Point3f pos(x, y, position.z);
+              nite::Point3f pos(x, y, position.z);
               user_skeleton.push_back(pos);
             }
             else
@@ -91,10 +110,9 @@ Skeletons SensorControl::getSkeletons(const bool convert)
   return skeletons;
 }
 
-DepthPixel *SensorControl::getDepth()
+DepthPixel *SensorControl::getDepthPixels()
 {
   DepthPixel *depth_pixel;
-
   VideoStream *stream = &depth;
 
   int ready_index;
@@ -114,7 +132,7 @@ DepthPixel *SensorControl::getDepth()
   return depth_pixel;
 }
 
-char *SensorControl::getColor()
+char *SensorControl::getColorPixels()
 {
   char *color_pixel;
 
@@ -135,6 +153,68 @@ char *SensorControl::getColor()
   }
 
   return color_pixel;
+}
+
+vector<UserId *> SensorControl::getUserMasks()
+{
+  vector<UserId *> user_masks;
+
+  UserTrackerFrameRef user_frame;
+  user_tracker.readFrame(&user_frame);
+
+  VideoFrameRef depth_frame = user_frame.getDepthFrame();
+  if(depth_frame.isValid())
+  {
+    VideoMode mode = depth_frame.getVideoMode();
+    DepthPixel *depth = (DepthPixel *)depth_frame.getData();
+    UserId *label = const_cast<UserId *>(user_frame.getUserMap().getPixels());
+    user_masks.push_back(label);
+  }
+
+  return user_masks;
+}
+
+vector<Point3d> SensorControl::getPoints()
+{
+  vector<Point3d> points;
+
+  VideoFrameRef depth_frame;
+  depth.readFrame(&depth_frame);
+
+  if(depth_frame.isValid())
+  {
+    DepthPixel *depth_pixel = (DepthPixel *)depth_frame.getData();
+    VideoMode mode = depth.getVideoMode();
+
+    for(int y = 0; y < mode.getResolutionY(); ++y)
+    {
+      for(int x = 0; x < mode.getResolutionX(); ++x)
+      {
+        float xpos, ypos, zpos;
+        DepthPixel pixel = depth_pixel[y * mode.getResolutionX() + x];
+        CoordinateConverter::convertDepthToWorld(depth, x, y, pixel, &xpos, &ypos, &zpos);
+
+        Point3d point(xpos, ypos, zpos);
+        points.push_back(point);
+      }
+    }
+  }
+
+  return points;
+}
+
+void SensorControl::startRecording()
+{
+  recorder = new Recorder();
+  recorder->create("sensor.oni");
+  recorder->attach(depth, true);
+  recorder->attach(color, true);
+  recorder->start();
+}
+
+void SensorControl::stopRecording()
+{
+  recorder->stop();
 }
 
 int SensorControl::getColorWidth()
@@ -188,11 +268,14 @@ void SensorControl::setupDepth()
   rc = depth.create(device, SENSOR_DEPTH);
   if(rc == openni::STATUS_OK)
   {
-    rc = depth.setVideoMode(depth_mode);
-    if(rc != openni::STATUS_OK)
+    if(oni_name.empty())
     {
-      outputError("Couldn't set depth video mode");
-      depth.destroy();
+      rc = depth.setVideoMode(depth_mode);
+      if(rc != openni::STATUS_OK)
+      {
+        outputError("Couldn't set depth video mode");
+        depth.destroy();
+      }
     }
 
     rc = depth.start();
@@ -222,11 +305,14 @@ void SensorControl::setupColor()
   rc = color.create(device, SENSOR_COLOR);
   if(rc == openni::STATUS_OK)
   {
-    rc = color.setVideoMode(color_mode);
-    if(rc != openni::STATUS_OK)
+    if(oni_name.empty())
     {
-      outputError("Couldn't set color video mode");
-      color.destroy();
+      rc = color.setVideoMode(color_mode);
+      if(rc != openni::STATUS_OK)
+      {
+        outputError("Couldn't set color video mode");
+        color.destroy();
+      }
     }
 
     rc = color.start();
@@ -240,4 +326,22 @@ void SensorControl::setupColor()
   {
     outputError("Couldn't find color stream");
   }
+}
+
+Mat SensorControl::getDepthImage(const bool convert_to_8bit)
+{
+  cv::Mat image(getDepthHeight(), getDepthWidth(), CV_16UC1, getDepthPixels());
+  if(convert_to_8bit)
+  {
+    image.convertTo(image, CV_8U, 255.0 / (double)depth.getMaxPixelValue());
+  }
+  return image;
+}
+
+Mat SensorControl::getColorImage()
+{
+  Mat image(getColorHeight(), getColorWidth(), CV_8UC3, getColorPixels());
+  cvtColor(image, image, COLOR_BGR2RGB);
+
+  return image;
 }

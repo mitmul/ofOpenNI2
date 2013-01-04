@@ -2,6 +2,7 @@
 #define SENSORCONTROL_H
 
 #include <NiTE.h>
+#include <opencv.hpp>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -9,20 +10,27 @@
 
 using namespace std;
 using namespace openni;
+using namespace cv;
 using namespace nite;
 
-typedef vector<vector<Point3f> > Skeletons;
+typedef vector<vector<nite::Point3f> > Skeletons;
 
 class SensorControl
 {
   public:
-    SensorControl();
-
-    bool getDeviceInitializeState();
+    SensorControl(const string &file_name = "");
+    ~SensorControl();
 
     Skeletons getSkeletons(const bool convert = false);
-    DepthPixel* getDepth();
-    char* getColor();
+    DepthPixel* getDepthPixels();
+    Mat getDepthImage(const bool convert_to_8bit = false);
+    char* getColorPixels();
+    Mat getColorImage();
+    vector<UserId*> getUserMasks();
+    vector<Point3d> getPoints();
+
+    void startRecording();
+    void stopRecording();
 
     int getColorWidth();
     int getColorHeight();
@@ -42,7 +50,8 @@ class SensorControl
     UserTracker user_tracker;
     Skeletons skeletons;
 
-    bool initialize_finished;
+    Recorder *recorder;
+    string oni_name;
 };
 
 #endif // SENSORCONTROL_H

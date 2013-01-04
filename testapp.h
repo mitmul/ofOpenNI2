@@ -2,6 +2,8 @@
 
 #include <ofMain.h>
 #include <opencv.hpp>
+#include <boost/signals2.hpp>
+#include <OpenNI.h>
 
 class testApp : public ofBaseApp{
 
@@ -22,5 +24,20 @@ class testApp : public ofBaseApp{
 
     void slotColor(const cv::Mat &color);
     void slotDepth(const cv::Mat &depth);
+    void slotPoint(const vector<cv::Point3d> &point);
 
+    boost::signals2::signal<void ()> sig_depth;
+    boost::signals2::signal<void ()> sig_color;
+    boost::signals2::signal<void ()> sig_point;
+
+  private:
+    cv::Mat depth_image;
+    cv::Mat color_image;
+    vector<cv::Point3d> world_point;
+
+    ofEasyCam camera;
+    ofMesh mesh;
+
+    int trans_x, trans_y;
+    double scale;
 };
