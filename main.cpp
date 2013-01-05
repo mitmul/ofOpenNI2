@@ -14,6 +14,7 @@ void slotPoint(const vector<cv::Point3d> &point);
 void slotSendColor();
 void slotSendDepth();
 void slotSendPoint();
+void slotClose();
 
 testApp *of_widget;
 SensorControl *sensor;
@@ -33,6 +34,7 @@ int main(int argc, char *argv[])
   of_widget->sig_color.connect(&slotSendColor);
   of_widget->sig_depth.connect(&slotSendDepth);
   of_widget->sig_point.connect(&slotSendPoint);
+  of_widget->sig_close.connect(&slotClose);
 
   ofAppGlutWindow window;
   ofSetupOpenGL(&window, 1000, 600, OF_WINDOW);
@@ -67,7 +69,7 @@ void slotSendColor()
 
 void slotSendDepth()
 {
-  cv::Mat depth = sensor->getDepthImage();
+  cv::Mat depth = sensor->getDepthImage(true);
   sig_depth(depth);
 }
 
@@ -75,4 +77,9 @@ void slotSendPoint()
 {
   vector<cv::Point3d> point = sensor->getPoints();
   sig_point(point);
+}
+
+void slotClose()
+{
+  delete sensor;
 }

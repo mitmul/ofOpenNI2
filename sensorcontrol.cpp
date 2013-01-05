@@ -1,7 +1,9 @@
 #include "sensorcontrol.h"
 
 SensorControl::SensorControl(const string &file_name)
-  : oni_name(file_name)
+  : oni_name(file_name),
+    recorder(NULL),
+    user_tracker(NULL)
 {
   openni::Status rc = openni::STATUS_OK;
 
@@ -31,7 +33,8 @@ SensorControl::SensorControl(const string &file_name)
   if(oni_name.empty())
   {
     NiTE::initialize();
-    rc = (openni::Status)user_tracker.create();
+    user_tracker = new UserTracker();
+    rc = (openni::Status)user_tracker->create();
     if(rc != openni::STATUS_OK)
     {
       outputError("User tracker create failed");
@@ -42,18 +45,25 @@ SensorControl::SensorControl(const string &file_name)
 
 SensorControl::~SensorControl()
 {
-  if(recorder->isValid())
+  if(recorder != NULL)
   {
     stopRecording();
     recorder->destroy();
     delete recorder;
   }
 
-  device.close();
+  depth.stop();
+  color.stop();
   depth.destroy();
   color.destroy();
-  user_tracker.destroy();
+  device.close();
   OpenNI::shutdown();
+
+  if(user_tracker != NULL)
+  {
+    delete user_tracker;
+  }
+  NiTE::shutdown();
 }
 
 Skeletons SensorControl::getSkeletons(const bool convert)
@@ -61,7 +71,7 @@ Skeletons SensorControl::getSkeletons(const bool convert)
   Skeletons skeletons;
 
   UserTrackerFrameRef user_frame;
-  user_tracker.readFrame(&user_frame);
+  user_tracker->readFrame(&user_frame);
   const nite::Array<UserData> &users = user_frame.getUsers();
 
   for(int i = 0; i < users.getSize(); ++i)
@@ -70,7 +80,7 @@ Skeletons SensorControl::getSkeletons(const bool convert)
 
     if(user.isNew())
     {
-      user_tracker.startSkeletonTracking(user.getId());
+      user_tracker->startSkeletonTracking(user.getId());
     }
     else if(!user.isLost())
     {
@@ -90,7 +100,7 @@ Skeletons SensorControl::getSkeletons(const bool convert)
             if(convert)
             {
               float x, y;
-              user_tracker.convertJointCoordinatesToDepth(position.x, position.y, position.z, &x, &y);
+              user_tracker->convertJointCoordinatesToDepth(position.x, position.y, position.z, &x, &y);
 
               nite::Point3f pos(x, y, position.z);
               user_skeleton.push_back(pos);
@@ -160,7 +170,7 @@ vector<UserId *> SensorControl::getUserMasks()
   vector<UserId *> user_masks;
 
   UserTrackerFrameRef user_frame;
-  user_tracker.readFrame(&user_frame);
+  user_tracker->readFrame(&user_frame);
 
   VideoFrameRef depth_frame = user_frame.getDepthFrame();
   if(depth_frame.isValid())

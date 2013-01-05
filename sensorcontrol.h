@@ -47,7 +47,7 @@ class SensorControl
     Device device;
     VideoStream depth;
     VideoStream color;
-    UserTracker user_tracker;
+    UserTracker *user_tracker;
     Skeletons skeletons;
 
     Recorder *recorder;

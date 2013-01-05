@@ -36,34 +36,39 @@ void testApp::keyPressed(int key)
 {
   switch(key)
   {
-    // left
+      // left
     case 356:
       trans_x += 100;
       break;
 
-    // up
+      // up
     case 357:
       trans_y += 100;
       break;
 
-    // right
+      // right
     case 358:
       trans_x -= 100;
       break;
 
-    // down
+      // down
     case 359:
       trans_y -= 100;
       break;
 
-    // w
+      // w
     case 119:
       scale -= 1.0;
       break;
 
-    // z
+      // z
     case 122:
       scale += 1.0;
+      break;
+
+      // esc
+    case 27:
+      sig_close();
       break;
   }
 }

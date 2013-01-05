@@ -29,6 +29,7 @@ class testApp : public ofBaseApp{
     boost::signals2::signal<void ()> sig_depth;
     boost::signals2::signal<void ()> sig_color;
     boost::signals2::signal<void ()> sig_point;
+    boost::signals2::signal<void ()> sig_close;
 
   private:
     cv::Mat depth_image;
