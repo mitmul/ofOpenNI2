@@ -2,12 +2,15 @@
 
 #include <ofMain.h>
 #include <opencv.hpp>
-#include <boost/signals2.hpp>
 #include <OpenNI.h>
+#include "sensorcontrol.h"
 
-class testApp : public ofBaseApp{
-
+class testApp : public ofBaseApp
+{
   public:
+    testApp();
+    ~testApp();
+
     void setup();
     void update();
     void draw();
@@ -26,12 +29,8 @@ class testApp : public ofBaseApp{
     void slotDepth(const cv::Mat &depth);
     void slotPoint(const vector<cv::Point3d> &point);
 
-    boost::signals2::signal<void ()> sig_depth;
-    boost::signals2::signal<void ()> sig_color;
-    boost::signals2::signal<void ()> sig_point;
-    boost::signals2::signal<void ()> sig_close;
-
-  private:
+  protected:
+    SensorControl *sensor;
     cv::Mat depth_image;
     cv::Mat color_image;
     vector<cv::Point3d> world_point;

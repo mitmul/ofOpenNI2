@@ -1,5 +1,15 @@
 #include "testapp.h"
 
+testApp::testApp()
+{
+  sensor = new SensorControl();
+}
+
+testApp::~testApp()
+{
+  delete sensor;
+}
+
 void testApp::setup()
 {
   glEnable(GL_DEPTH_TEST);
@@ -13,15 +23,13 @@ void testApp::setup()
 
 void testApp::update()
 {
-
+  slotColor(sensor->getColorImage());
+  slotDepth(sensor->getDepthImage(true));
+  slotPoint(sensor->getPoints());
 }
 
 void testApp::draw()
 {
-  sig_color();
-  sig_depth();
-  sig_point();
-
   ofBackgroundGradient(ofColor::gray, ofColor::black, OF_GRADIENT_CIRCULAR);
 
   camera.begin();
@@ -36,40 +44,39 @@ void testApp::keyPressed(int key)
 {
   switch(key)
   {
-      // left
-    case 356:
-      trans_x += 100;
-      break;
+  // left
+  case 356:
+    trans_x += 100;
+    break;
 
-      // up
-    case 357:
-      trans_y += 100;
-      break;
+    // up
+  case 357:
+    trans_y += 100;
+    break;
 
-      // right
-    case 358:
-      trans_x -= 100;
-      break;
+    // right
+  case 358:
+    trans_x -= 100;
+    break;
 
-      // down
-    case 359:
-      trans_y -= 100;
-      break;
+    // down
+  case 359:
+    trans_y -= 100;
+    break;
 
-      // w
-    case 119:
-      scale -= 1.0;
-      break;
+    // w
+  case 119:
+    scale -= 1.0;
+    break;
 
-      // z
-    case 122:
-      scale += 1.0;
-      break;
+    // z
+  case 122:
+    scale += 1.0;
+    break;
 
-      // esc
-    case 27:
-      sig_close();
-      break;
+    // esc
+  case 27:
+    break;
   }
 }
 
@@ -110,37 +117,67 @@ void testApp::gotMessage(ofMessage msg)
 
 void testApp::slotColor(const cv::Mat &color)
 {
-  color_image = color.clone();
-  cv::imshow("Color", color);
+  try
+  {
+    color_image = color.clone();
+    cv::imshow("Color", color);
+
+    cout << "slotColor" << endl;
+  }
+  catch(std::exception &ex)
+  {
+    cerr << "testApp::slotColor()"
+         << ex.what() << endl;
+  }
 }
 
 void testApp::slotDepth(const cv::Mat &depth)
 {
-  depth_image = depth.clone();
-  cv::imshow("Depth", depth);
+  try
+  {
+    depth_image = depth.clone();
+    cv::imshow("Depth", depth);
+
+    cout << "slotDepth" << endl;
+  }
+  catch(std::exception &ex)
+  {
+    cerr << "testApp::slotDepth()"
+         << ex.what() << endl;
+  }
 }
 
 void testApp::slotPoint(const vector<cv::Point3d> &point)
 {
-  world_point = point;
-
-  mesh.clear();
-  mesh.setMode(OF_PRIMITIVE_POINTS);
-
-  for(int y = 0; y < color_image.rows; ++y)
+  try
   {
-    for(int x = 0; x < color_image.cols; ++x)
+    world_point = point;
+
+    mesh.clear();
+    mesh.setMode(OF_PRIMITIVE_POINTS);
+
+    for(int y = 0; y < color_image.rows; ++y)
     {
-      // RGB画像から色を取得
-      cv::Vec3b c = color_image.at<cv::Vec3b>(y, x);
-      ofColor color(c[2], c[1], c[0]);
+      for(int x = 0; x < color_image.cols; ++x)
+      {
+        // RGB画像から色を取得
+        cv::Vec3b c = color_image.at<cv::Vec3b>(y, x);
+        ofColor color(c[2], c[1], c[0]);
 
-      // 三次元点
-      cv::Point3d pos = world_point[y * color_image.cols + x];
+        // 三次元点
+        cv::Point3d pos = world_point[y * color_image.cols + x];
 
-      mesh.addColor(color);
-      mesh.addVertex(ofVec3f(pos.x, pos.y, pos.z));
+        mesh.addColor(color);
+        mesh.addVertex(ofVec3f(pos.x, pos.y, pos.z));
+      }
     }
+
+    cout << "slotPoint" << endl;
+  }
+  catch(std::exception &ex)
+  {
+    cerr << "testApp::slotPoint()"
+         << ex.what() << endl;
   }
 }
 
@@ -148,3 +185,4 @@ void testApp::dragEvent(ofDragInfo dragInfo)
 {
 
 }
+

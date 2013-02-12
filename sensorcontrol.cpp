@@ -41,6 +41,8 @@ SensorControl::SensorControl(const string &file_name)
       OpenNI::shutdown();
     }
   }
+
+  cout << "sensor initialized" << endl;
 }
 
 SensorControl::~SensorControl()

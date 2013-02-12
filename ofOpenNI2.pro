@@ -1,17 +1,23 @@
 TEMPLATE = app
-CONFIG += console
-CONFIG -= qt
+
+QT += core gui network
+
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 QMAKE_CXXFLAGS_WARN_ON += "-Wno-unused-parameter"
 QMAKE_CXXFLAGS += -fpermissive
+QMAKE_CXXFLAGS_RELEASE -= -O2
+QMAKE_CXXFLAGS_RELEASE += -O3
 
 SOURCES += main.cpp \
     testapp.cpp \
-    sensorcontrol.cpp
+    sensorcontrol.cpp \
+    mainwindow.cpp
 
 HEADERS += \
     testapp.h \
-    sensorcontrol.h
+    sensorcontrol.h \
+    mainwindow.h
 
 # OpenCV 32bit
 LIBS += -L/opt/local/lib \
@@ -65,35 +71,35 @@ LIBS += -L/opt/local/lib \
   -lboost_wserialization
 
 # OpenNI/NiTE
-INCLUDEPATH += /opt/local/OpenNI/include \
-  /opt/local/NiTE/include
-LIBS += -L/opt/local/OpenNI/lib \
+INCLUDEPATH += /opt/local/OpenNI-2.1.0/Include \
+  /opt/local/NiTE-2.0.0/Include
+LIBS += -L/opt/local/OpenNI-2.1.0/Redist \
   -lOpenNI2 \
-  -L/opt/local/OpenNI/lib/OpenNI2/Drivers \
+  -L/opt/local/OpenNI-2.1.0/Redist/OpenNI2/Drivers \
   -lOniFile \
   -lPS1080 \
-  -L/opt/local/NiTE/lib \
+  -L/opt/local/NiTE-2.0.0/Redist \
   -lNiTE2
 
 # openFrameworks
-INCLUDEPATH += /opt/local/openFrameworks/openFrameworks \
-  /opt/local/openFrameworks/openFrameworks/3d \
-  /opt/local/openFrameworks/openFrameworks/app \
-  /opt/local/openFrameworks/openFrameworks/communication \
-  /opt/local/openFrameworks/openFrameworks/events \
-  /opt/local/openFrameworks/openFrameworks/gl \
-  /opt/local/openFrameworks/openFrameworks/graphics \
-  /opt/local/openFrameworks/openFrameworks/math \
-  /opt/local/openFrameworks/openFrameworks/sound \
-  /opt/local/openFrameworks/openFrameworks/types \
-  /opt/local/openFrameworks/openFrameworks/utils \
-  /opt/local/openFrameworks/openFrameworks/video \
-  /opt/local/openFrameworks/glew/include \
-  /opt/local/openFrameworks/glut/include \
-  /opt/local/openFrameworks/cairo/include/cairo \
-  /opt/local/openFrameworks/tess2/include \
-  /opt/local/openFrameworks/poco/include \
-  /opt/local/openFrameworks/fmodex/include
+INCLUDEPATH += /opt/local/of_v0073_osx_release/libs/openFrameworks \
+  /opt/local/of_v0073_osx_release/libs/openFrameworks/3d \
+  /opt/local/of_v0073_osx_release/libs/openFrameworks/app \
+  /opt/local/of_v0073_osx_release/libs/openFrameworks/communication \
+  /opt/local/of_v0073_osx_release/libs/openFrameworks/events \
+  /opt/local/of_v0073_osx_release/libs/openFrameworks/gl \
+  /opt/local/of_v0073_osx_release/libs/openFrameworks/graphics \
+  /opt/local/of_v0073_osx_release/libs/openFrameworks/math \
+  /opt/local/of_v0073_osx_release/libs/openFrameworks/sound \
+  /opt/local/of_v0073_osx_release/libs/openFrameworks/types \
+  /opt/local/of_v0073_osx_release/libs/openFrameworks/utils \
+  /opt/local/of_v0073_osx_release/libs/openFrameworks/video \
+  /opt/local/of_v0073_osx_release/libs/glew/include \
+  /opt/local/of_v0073_osx_release/libs/glut/include \
+  /opt/local/of_v0073_osx_release/libs/cairo/include/cairo \
+  /opt/local/of_v0073_osx_release/libs/tess2/include \
+  /opt/local/of_v0073_osx_release/libs/poco/include \
+  /opt/local/of_v0073_osx_release/libs/fmodex/include
 LIBS += -framework Accelerate \
   -framework AppKit \
   -framework Cocoa \
@@ -109,22 +115,25 @@ LIBS += -framework Accelerate \
   -framework CoreServices \
   -framework OpenGL \
   -framework QuickTime
-LIBS += /opt/local/openFrameworks/openFrameworksCompiled/lib/osx/openFrameworks.a
-LIBS += /opt/local/openFrameworks/glew/lib/osx/glew.a
-LIBS += /opt/local/openFrameworks/tess2/lib/osx/tess2.a
-LIBS += /opt/local/openFrameworks/poco/lib/osx/PocoCrypto.a
-LIBS += /opt/local/openFrameworks/poco/lib/osx/PocoData.a
-LIBS += /opt/local/openFrameworks/poco/lib/osx/PocoDataODBC.a
-LIBS += /opt/local/openFrameworks/poco/lib/osx/PocoDataSQLite.a
-LIBS += /opt/local/openFrameworks/poco/lib/osx/PocoFoundation.a
-LIBS += /opt/local/openFrameworks/poco/lib/osx/PocoNet.a
-LIBS += /opt/local/openFrameworks/poco/lib/osx/PocoNetSSL.a
-LIBS += /opt/local/openFrameworks/poco/lib/osx/PocoUtil.a
-LIBS += /opt/local/openFrameworks/poco/lib/osx/PocoXML.a
-LIBS += /opt/local/openFrameworks/poco/lib/osx/PocoZip.a
-LIBS += /opt/local/openFrameworks/cairo/lib/osx/cairo-script-interpreter.a
-LIBS += /opt/local/openFrameworks/cairo/lib/osx/cairo.a
-LIBS += /opt/local/openFrameworks/cairo/lib/osx/pixman-1.a
-LIBS += /opt/local/openFrameworks/fmodex/lib/osx/libfmodex.dylib
-QMAKE_LFLAGS += -F/opt/local/openFrameworks/glut/lib/osx/
+LIBS += /opt/local/of_v0073_osx_release/libs/openFrameworksCompiled/lib/osx/openFrameworks.a
+LIBS += /opt/local/of_v0073_osx_release/libs/glew/lib/osx/glew.a
+LIBS += /opt/local/of_v0073_osx_release/libs/tess2/lib/osx/tess2.a
+LIBS += /opt/local/of_v0073_osx_release/libs/poco/lib/osx/PocoCrypto.a
+LIBS += /opt/local/of_v0073_osx_release/libs/poco/lib/osx/PocoData.a
+LIBS += /opt/local/of_v0073_osx_release/libs/poco/lib/osx/PocoDataODBC.a
+LIBS += /opt/local/of_v0073_osx_release/libs/poco/lib/osx/PocoDataSQLite.a
+LIBS += /opt/local/of_v0073_osx_release/libs/poco/lib/osx/PocoFoundation.a
+LIBS += /opt/local/of_v0073_osx_release/libs/poco/lib/osx/PocoNet.a
+LIBS += /opt/local/of_v0073_osx_release/libs/poco/lib/osx/PocoNetSSL.a
+LIBS += /opt/local/of_v0073_osx_release/libs/poco/lib/osx/PocoUtil.a
+LIBS += /opt/local/of_v0073_osx_release/libs/poco/lib/osx/PocoXML.a
+LIBS += /opt/local/of_v0073_osx_release/libs/poco/lib/osx/PocoZip.a
+LIBS += /opt/local/of_v0073_osx_release/libs/cairo/lib/osx/cairo-script-interpreter.a
+LIBS += /opt/local/of_v0073_osx_release/libs/cairo/lib/osx/cairo.a
+LIBS += /opt/local/of_v0073_osx_release/libs/cairo/lib/osx/pixman-1.a
+LIBS += /opt/local/of_v0073_osx_release/libs/fmodex/lib/osx/libfmodex.dylib
+QMAKE_LFLAGS += -F/opt/local/of_v0073_osx_release/libs/glut/lib/osx/
 LIBS += -framework GLUT
+
+FORMS += \
+    mainwindow.ui
